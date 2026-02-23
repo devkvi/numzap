@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>NUMZAP</title>
-<script src="https://sdk.play.fun/latest"></script>
+<script src="https://sdk.play.fun/latest" async></script>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Bubblegum+Sans&family=Finger+Paint&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -476,16 +476,20 @@
 // ── Play.fun SDK ──
 let playFunSDK = null;
 function initPlayFun() {
-  if (typeof OpenGameSDK === 'undefined') return;
-  playFunSDK = new OpenGameSDK({
-    gameId: '3a6bcfd8-c5fa-4cce-97e1-bc8ab91bb1a0',
-    ui: { usePointsWidget: true },
-  });
-  playFunSDK.init().then(() => console.log('Play.fun SDK ready'));
+  try {
+    if (typeof OpenGameSDK === 'undefined') return;
+    playFunSDK = new OpenGameSDK({
+      gameId: '3a6bcfd8-c5fa-4cce-97e1-bc8ab91bb1a0',
+      ui: { usePointsWidget: true },
+    });
+    playFunSDK.init().then(() => console.log('Play.fun SDK ready')).catch(() => {});
+  } catch (e) {
+    console.warn('Play.fun SDK init failed:', e);
+    playFunSDK = null;
+  }
 }
-initPlayFun();
-// Retry if SDK script hasn't loaded yet
-if (!playFunSDK) window.addEventListener('load', initPlayFun);
+// SDK loads async, so init on load
+window.addEventListener('load', initPlayFun);
 
 (() => {
   // ══════════════════════════════════════════
