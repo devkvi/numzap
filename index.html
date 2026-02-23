@@ -481,6 +481,7 @@ function initPlayFun() {
     if (typeof OpenGameSDK === 'undefined') return;
     playFunSDK = new OpenGameSDK({
       gameId: '3a6bcfd8-c5fa-4cce-97e1-bc8ab91bb1a0',
+      apiKey: '6412171f-891d-4193-8761-26a874429aff',
       ui: { usePointsWidget: true },
     });
     playFunSDK.init().then(() => console.log('Play.fun SDK ready')).catch(() => {});
