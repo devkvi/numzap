@@ -171,7 +171,7 @@
     font-family: 'Finger Paint', cursive;
   }
 
-  /* ── ANSWER PANELS (neutral) ── */
+  /* ── ANSWER PANELS ── */
   .answers {
     display: flex;
     gap: 12px;
@@ -181,23 +181,32 @@
   .answer-btn {
     flex: 1;
     padding: 20px 8px;
-    border: 2px solid var(--btn-border);
+    border: 2px solid transparent;
     border-radius: 18px;
     font-family: 'Fredoka One', cursive;
-    font-size: 32px;
+    font-size: 24px;
     cursor: pointer;
     transition: transform .15s, box-shadow .15s, background .15s;
     position: relative;
     overflow: hidden;
-    background: var(--btn-bg);
-    color: var(--text);
-    box-shadow: 0 6px 24px rgba(0,0,0,.3);
+    color: #fff;
     -webkit-tap-highlight-color: transparent;
   }
   .answer-btn:active {
     transform: scale(.95);
-    background: #4a4065;
   }
+  .btn-wrong {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    border-color: #ff8a80;
+    box-shadow: 0 6px 24px rgba(255,107,107,.3);
+  }
+  .btn-wrong:active { background: linear-gradient(135deg, #e05555, #d44f1e); }
+  .btn-correct {
+    background: linear-gradient(135deg, #51cf66, #20bf6b);
+    border-color: #69db7c;
+    box-shadow: 0 6px 24px rgba(81,207,102,.3);
+  }
+  .btn-correct:active { background: linear-gradient(135deg, #40b955, #1aad5f); }
   .answer-label {
     font-family: 'Finger Paint', cursive;
     font-size: 11px;
@@ -428,20 +437,20 @@
     <div class="swipe-indicator right" id="ind-right">👉</div>
 
     <div class="card" id="card">
-      <div class="equation" id="equation">2 + 3</div>
-      <div class="equation-hint">swipe or tap!</div>
+      <div class="equation" id="equation">2 + 3 = 5</div>
+      <div class="equation-hint">this should be easy... right? 🤔</div>
     </div>
   </div>
 
-  <!-- ANSWERS (neutral colour) -->
+  <!-- ANSWERS (true/false) -->
   <div class="answers">
-    <button class="answer-btn" id="btn-left" ontouchstart="">
+    <button class="answer-btn btn-wrong" id="btn-left" ontouchstart="">
       <span class="answer-label">◀ swipe</span>
-      <span id="ans-left">5</span>
+      <span id="ans-left">❌ WRONG</span>
     </button>
-    <button class="answer-btn" id="btn-right" ontouchstart="">
+    <button class="answer-btn btn-correct" id="btn-right" ontouchstart="">
       <span class="answer-label">swipe ▶</span>
-      <span id="ans-right">7</span>
+      <span id="ans-right">✅ CORRECT</span>
     </button>
   </div>
 
@@ -449,14 +458,17 @@
   <div class="screen-overlay" id="start-screen">
     <div class="screen-title">NUM<br>ZAP</div>
     <div class="screen-subtitle">
-      Swipe left or right to pick the answer.<br>
-      Be fast! ⏱️ You only get 5 seconds.<br>
-      2 mistakes and you're out!
+      The average American can't pass<br>a 4th grade math test. Can you? 🇺🇸<br><br>
+      We'll show you an equation.<br>
+      Swipe ▶ if it's ✅ CORRECT.<br>
+      Swipe ◀ if it's ❌ WRONG.<br><br>
+      5 seconds. 2 lives. No calculator.<br>
+      Good luck, you'll need it.
     </div>
-    <button class="play-btn" id="start-btn">LET'S GO!</button>
+    <button class="play-btn" id="start-btn">PROVE ME WRONG</button>
     <div class="swipe-tutorial">
       <span class="arrow">👈</span>
-      swipe or tap
+      wrong · correct
       <span class="arrow">👉</span>
     </div>
   </div>
@@ -464,12 +476,13 @@
   <!-- GAME OVER -->
   <div class="screen-overlay hidden" id="gameover-screen">
     <div class="screen-title">GAME<br>OVER</div>
+    <div id="roast-msg" style="font-family:'Finger Paint',cursive;font-size:16px;color:var(--gold);margin:8px 20px 16px;line-height:1.5;"></div>
     <div class="screen-stats">
       <div class="stat-line">Score: <span id="final-score">0</span></div>
       <div class="stat-line">Best streak: <span id="final-streak">0</span></div>
       <div class="stat-line">Level reached: <span id="final-level">1</span></div>
     </div>
-    <button class="play-btn" id="retry-btn">TRY AGAIN</button>
+    <button class="play-btn" id="retry-btn">REDEMPTION ARC</button>
   </div>
 </div>
 
@@ -490,7 +503,6 @@ function initPlayFun() {
     playFunSDK = null;
   }
 }
-// SDK loads async, so init on load
 window.addEventListener('load', initPlayFun);
 
 (() => {
@@ -668,8 +680,8 @@ window.addEventListener('load', initPlayFun);
   const startScreen = $('start-screen'), overScreen = $('gameover-screen');
 
   const levelNames = [
-    'Easy Peasy', 'Getting Warmer', 'Not Bad!', 'Heating Up',
-    'Big Brain Time', 'Math Wizard', 'Galaxy Brain', 'LEGENDARY'
+    'Kindergarten', '2nd Grade', '4th Grade', 'Middle School',
+    'High School-ish', 'College Maybe?', 'Actual Smart Person', 'CERTIFIED GENIUS'
   ];
 
   function bpmForLevel(lv) {
@@ -755,17 +767,22 @@ window.addEventListener('load', initPlayFun);
     correctAnswer = q.answer;
     const wrong = genWrongAnswer(correctAnswer);
 
-    if (Math.random() < .5) {
-      ansL.textContent = correctAnswer;
-      ansR.textContent = wrong;
-      correctSide = 'left';
+    // 50/50 chance: show the real answer or a wrong one
+    let shownAnswer, isShownCorrect;
+    if (Math.random() < 0.5) {
+      shownAnswer = correctAnswer;
+      isShownCorrect = true;
     } else {
-      ansR.textContent = correctAnswer;
-      ansL.textContent = wrong;
-      correctSide = 'right';
+      shownAnswer = wrong;
+      isShownCorrect = false;
     }
 
-    eqEl.textContent = q.display;
+    // Right = CORRECT, Left = WRONG
+    // So if the shown answer IS correct, the right side (CORRECT) is the winning choice
+    // If the shown answer is WRONG, the left side (WRONG) is the winning choice
+    correctSide = isShownCorrect ? 'right' : 'left';
+
+    eqEl.textContent = `${q.display} = ${shownAnswer}`;
     const newLevel = Math.floor(score / 3) + 1;
     if (newLevel !== level) {
       level = newLevel;
@@ -958,6 +975,40 @@ window.addEventListener('load', initPlayFun);
   btnL.addEventListener('click', () => { if (playing) handleAnswer('left'); });
   btnR.addEventListener('click', () => { if (playing) handleAnswer('right'); });
 
+  // ── ROAST MESSAGES ──
+  const roastsLow = [
+    "Congratulations, you just failed 4th grade math. 🎓",
+    "Your math teacher is crying somewhere right now.",
+    "Even a calculator would be embarrassed for you.",
+    "The American education system just entered the chat. 📉",
+    "You'd lose a math battle to a golden retriever.",
+    "This is why they put tip calculators on receipts.",
+    "NASA will not be calling you. Ever.",
+    "You are the reason 'Are You Smarter Than a 5th Grader' got cancelled.",
+  ];
+  const roastsMid = [
+    "Not terrible... but definitely not getting into MIT.",
+    "Your math skills are mid. Just like your SAT scores.",
+    "You survived longer than most Americans. Low bar though.",
+    "Average. Just like the national math ranking. 🇺🇸 #38",
+    "Your tax preparer still has job security.",
+    "C+ energy. Your parents are 'proud' (they're not).",
+  ];
+  const roastsHigh = [
+    "OK fine, you can do math. Don't let it go to your head.",
+    "Your parents finally have something to brag about.",
+    "Not bad! You might actually survive without a calculator.",
+    "Top of the class! (The American class, so... take that how you will.)",
+    "You just outperformed 87% of Congress. Seriously.",
+    "Math wizard! Now try doing your own taxes.",
+  ];
+
+  function getRoast(s) {
+    if (s <= 4) return roastsLow[randInt(0, roastsLow.length - 1)];
+    if (s <= 12) return roastsMid[randInt(0, roastsMid.length - 1)];
+    return roastsHigh[randInt(0, roastsHigh.length - 1)];
+  }
+
   // ── START / GAME OVER ──
   function startGame() {
     initAudio();
@@ -980,6 +1031,7 @@ window.addEventListener('load', initPlayFun);
     $('final-score').textContent = score;
     $('final-streak').textContent = bestStreak;
     $('final-level').textContent = level;
+    $('roast-msg').textContent = getRoast(score);
     overScreen.classList.remove('hidden');
   }
 
